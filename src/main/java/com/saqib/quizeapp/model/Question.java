@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class Question {
 
         @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)  // something wrong this statement every project
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         private int id;
         private String title;
         private String category;

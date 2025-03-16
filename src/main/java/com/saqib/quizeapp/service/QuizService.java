@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -21,9 +22,6 @@ public class QuizService {
 
     @Autowired
     private QuizDao quizDao;
-
-//    @Autowired
-//    private Question question;
 
     @Autowired
     private QuestionDao questionDao;
@@ -50,39 +48,55 @@ public class QuizService {
         return new ResponseEntity<> ( questionForUser, HttpStatus.OK );
     }
 
+
 //    public ResponseEntity<Integer> calculateResult(Integer id, List<Response> responses) {
-//        Quiz quiz = quizDao.findById ( id ).get ();
+//        Quiz quiz = quizDao.findById ( id ).orElseThrow ( () -> new RuntimeException ( "Quiz not found" ) );
 //        List<Question> questions = quiz.getQuestions ();
-//        int right = 0;
-//        int i = 0;
-//        for (Response response : responses) {
-//            if (response.getResponse ().equals ( questions.get ( i ).getCorrectAnswer () ))
-//                right++;
 //
-//            i++;
+//        int right = 0;
+//
+//        for (int i = 0; i < responses.size () && i < questions.size (); i++) {
+//            String userResponse = responses.get ( i ).getResponse ();
+//            String correctAnswer = questions.get ( i ).getCorrectAnswer ();
+//
+//            // Check for null values before calling .equals()
+//            if (userResponse != null && userResponse.equals ( correctAnswer )) {
+//                right++;
+//            }
 //        }
+//
 //        return new ResponseEntity<> ( right, HttpStatus.OK );
 //    }
 
+    public int calculateResult(Integer id, List<Response> responses) {
+        Quiz quiz = quizDao.findById ( id )
+                .orElseThrow ( () -> new RuntimeException ( "Quiz not found" ) );
 
-public ResponseEntity<Integer> calculateResult(Integer id, List<Response> responses) {
-    Quiz quiz = quizDao.findById(id).orElseThrow(() -> new RuntimeException("Quiz not found"));
-    List<Question> questions = quiz.getQuestions();
+        List<Question> questions = quiz.getQuestions ();
 
-    int right = 0;
+//        // Debug: Print received responses
+//        System.out.println ( "Received Responses: " + responses );
+//
+//        // Debug: Print questions retrieved from DB
+//        System.out.println ( "Questions from DB: " + questions );
 
-    for (int i = 0; i < responses.size() && i < questions.size(); i++) {
-        String userResponse = responses.get(i).getResponse();
-        String correctAnswer = questions.get(i).getCorrectAnswer();
+        long correctCount = responses.stream ()
+                .filter ( response -> {
+                    Question question = questions.stream ()
+                            .filter ( q -> Objects.equals ( q.getId (), response.getId () ) ) // Matching IDs
+                            .findFirst ()
+                            .orElse ( null );
 
-        // Check for null values before calling .equals()
-        if (userResponse != null && userResponse.equals(correctAnswer)) {
-            right++;
-        }
+                    // Debug: Check matched question and responses
+//                    System.out.println ( "Checking Response: " + response );
+//                    System.out.println ( "Matched Question: " + question );
+
+                    return question != null && response.getResponse ().equals ( question.getCorrectAnswer () );
+                } )
+                .count ();
+
+        System.out.println ( "Total Correct Answers: " + correctCount );
+
+        return (int) correctCount;
     }
-
-    return new ResponseEntity<>(right, HttpStatus.OK);
 }
-
-}
-
